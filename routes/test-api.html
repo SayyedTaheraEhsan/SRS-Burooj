@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SRS Burooj API Test</title>
+</head>
+
+<body>
+
+  <h2>SRS Burooj - API Test</h2>
+
+  <button onclick="addProject()">Add Test Project</button>
+  <button onclick="updateProject()">Update Test Project</button>
+  <button onclick="deleteProject()">Delete Test Project</button>
+
+  <pre id="result"></pre>
+
+  <!-- ADD PROJECT -->
+  <script>
+    async function addProject() {
+      const response = await fetch("http://localhost:5000/api/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          project_name: "SRS Burooj Test Project",
+          location: "Pune",
+          description: "Test project",
+          status: "Upcoming"
+        })
+      });
+
+      const data = await response.json();
+
+      document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
+    }
+  </script>
+
+  <!-- UPDATE PROJECT -->
+  <script>
+    async function updateProject() {
+      const response = await fetch("http://localhost:5000/api/projects/1", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          project_name: "SRS Burooj Updated Project",
+          location: "Pune",
+          description: "Updated test project",
+          status: "Ongoing"
+        })
+      });
+
+      const data = await response.json();
+
+      document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
+    }
+  </script>
+
+  <!-- DELETE PROJECT -->
+  <script>
+    async function deleteProject() {
+      const response = await fetch("http://localhost:5000/api/projects/1", {
+        method: "DELETE"
+      });
+
+      const data = await response.json();
+
+      document.getElementById("result").textContent =
+        JSON.stringify(data, null, 2);
+    }
+  </script>
+
+</body>
+</html>

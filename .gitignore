@@ -1,0 +1,19 @@
+﻿node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+coverage/
+
+# Sensitive files and user-uploaded data
+smtp-debug.txt
+**/smtp-debug.txt
+uploads/
+**/uploads/
+
+# Local backup files - do not upload
+*.backup
+*.backup.*
