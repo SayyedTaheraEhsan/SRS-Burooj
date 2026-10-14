@@ -17,3 +17,9 @@ uploads/
 # Local backup files - do not upload
 *.backup
 *.backup.*
+
+# Local certificates and backup files - never upload
+ca.pem
+*.pem
+*.bak
+*-backup-*.zip
