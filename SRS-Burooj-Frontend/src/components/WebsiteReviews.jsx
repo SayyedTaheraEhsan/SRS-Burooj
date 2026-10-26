@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import API_BASE_URL from "../apiBase";
 
-const API = "http://localhost:5000";
+const API = API_BASE_URL;
 
 function normalizeReview(item, type) {
   return {
