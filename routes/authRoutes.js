@@ -5,7 +5,6 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
 const fs = require("fs");
 const path = require("path");
 
@@ -78,27 +77,48 @@ writeDebug("EMAIL ENV CHECK", {
   smtpSecure: true,
 });
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+// =====================================================
+// RESEND EMAIL API
+// =====================================================
 
-transporter.verify((error) => {
-  if (error) {
-    writeDebug("SMTP VERIFY FAILED");
-    console.error(
-      "SMTP verification failed. Check server email configuration."
-    );
-  } else {
-    writeDebug("SMTP VERIFY SUCCESS");
-    console.log("SMTP connection verified.");
+async function sendEmail({ to, subject, html }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL;
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is missing from the environment configuration.");
   }
-});
+
+  if (!from) {
+    throw new Error("RESEND_FROM_EMAIL is missing. Set it to a sender address verified in Resend.");
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message =
+      result.message ||
+      result.name ||
+      `Resend API request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  return result;
+}
 
 // =====================================================
 // FRONTEND URL HELPER
@@ -314,8 +334,7 @@ router.post("/forgot-password", (req, res) => {
             )}`;
 
           try {
-            await transporter.sendMail({
-              from: `"SRS Burooj" <${process.env.EMAIL_USER}>`,
+            await sendEmail({
               to: admin.email,
               subject:
                 "SRS Burooj - Reset Your Admin Password",
@@ -802,8 +821,7 @@ router.post("/customer-forgot-password", (req, res) => {
           );
 
           try {
-            await transporter.sendMail({
-              from: `"SRS Burooj" <${process.env.EMAIL_USER}>`,
+            await sendEmail({
               to: user.email,
               subject:
                 "SRS Burooj - Reset Your Customer Password",
