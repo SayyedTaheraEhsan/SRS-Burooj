@@ -23,3 +23,8 @@ ca.pem
 *.pem
 *.bak
 *-backup-*.zip
+
+aiven-test.env
+git-safety-backup/
+make-local-backup.js
+test-aiven-connection.js

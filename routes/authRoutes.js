@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const nodemailer = require("nodemailer");
 
 const db = require("../db");
 const sharedAuthenticateAdmin = require("../middleware/adminAuth");
@@ -76,50 +77,42 @@ writeDebug("EMAIL ENV CHECK", {
   smtpPort: 465,
   smtpSecure: true,
 });
+// =====================================================
+// GMAIL SMTP EMAIL SERVICE
+// =====================================================
 
-// =====================================================
-// RESEND EMAIL API
-// =====================================================
+const emailTransporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
 
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY is missing from the environment configuration.");
+  if (!emailUser || !emailPass) {
+    throw new Error(
+      "Email service is not configured. Please check EMAIL_USER and EMAIL_PASS."
+    );
   }
 
-  if (!from) {
-    throw new Error("RESEND_FROM_EMAIL is missing. Set it to a sender address verified in Resend.");
-  }
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const result = await emailTransporter.sendMail({
+    from: {
+      name: "SRS Burooj",
+      address: emailUser,
     },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject,
-      html,
-    }),
+    to,
+    subject,
+    html,
   });
-
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    const message =
-      result.message ||
-      result.name ||
-      `Resend API request failed with status ${response.status}`;
-    throw new Error(message);
-  }
 
   return result;
 }
-
 // =====================================================
 // FRONTEND URL HELPER
 // =====================================================
