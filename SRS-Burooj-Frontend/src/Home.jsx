@@ -31,6 +31,7 @@ function Home() {
   const [settings, setSettings] = useState(defaultSettings);
 
   const [projects, setProjects] = useState([]);
+  const [projectMediaById, setProjectMediaById] = useState({});
   const [units, setUnits] = useState([]);
   const [advertisements, setAdvertisements] = useState([]);
 
@@ -332,6 +333,79 @@ function Home() {
       );
     };
   }, []);
+
+  // Load each project's uploaded photos from the existing project-media API.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProjectMedia() {
+      if (!Array.isArray(projects) || projects.length === 0) {
+        setProjectMediaById({});
+        return;
+      }
+
+      const entries = await Promise.all(
+        projects.map(async (project) => {
+          const id = project?.id || project?._id || project?.project_id;
+          if (!id) return [null, []];
+
+          try {
+            const response = await fetch(`${API_BASE}/api/project-media/${id}`);
+            if (!response.ok) return [String(id), []];
+
+            const data = await response.json();
+            const media = Array.isArray(data)
+              ? data
+              : Array.isArray(data?.media)
+              ? data.media
+              : [];
+
+            const photos = media.filter((item) => {
+              const type = String(item?.media_type || item?.type || "").toLowerCase();
+              const url = item?.media_url || item?.url || item?.image_url || item?.photo_url || "";
+              return url && (!type || type.includes("photo") || type.includes("image"));
+            });
+
+            return [String(id), photos];
+          } catch (error) {
+            console.error("Project photos load error:", id, error);
+            return [String(id), []];
+          }
+        })
+      );
+
+      if (!cancelled) {
+        setProjectMediaById(Object.fromEntries(entries.filter(([id]) => id)));
+      }
+    }
+
+    loadProjectMedia();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projects]);
+
+  const getProjectImage = (project) => {
+    const id = project?.id || project?._id || project?.project_id;
+    const media = projectMediaById[String(id)] || [];
+    const firstMedia = media[0];
+    const source =
+      firstMedia?.media_url ||
+      firstMedia?.url ||
+      firstMedia?.image_url ||
+      firstMedia?.photo_url ||
+      project?.image_url ||
+      project?.imageUrl ||
+      project?.image ||
+      project?.photo_url ||
+      project?.photo ||
+      "";
+
+    if (!source) return "";
+    if (/^(data:|https?:|blob:)/i.test(source)) return source;
+    return source.startsWith("/") ? `${API_BASE}${source}` : `${API_BASE}/${source}`;
+  };
 
   // =========================================================
   // HOME PHOTOS / VIDEOS
@@ -1032,15 +1106,37 @@ function Home() {
                           projectId ||
                           index
                         }
-                        style={cardStyle}
+                        style={{
+                          ...cardStyle,
+                          padding: 0,
+                          overflow: "hidden",
+                        }}
                       >
-                        <div
-                          style={
-                            projectIconStyle
-                          }
-                        >
-                          âŒ‚
-                        </div>
+                        {getProjectImage(project) ? (
+                          <img
+                            src={getProjectImage(project)}
+                            alt={projectName}
+                            style={{
+                              width: "100%",
+                              height: "220px",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                            onError={(event) => {
+                              event.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              ...projectIconStyle,
+                              margin: "22px 22px 16px",
+                            }}
+                          >
+                            🏢
+                          </div>
+                        )}
+                        <div style={{ padding: "0 24px 24px" }}>
 
                         <h3
                           style={
@@ -1081,6 +1177,7 @@ function Home() {
                             {project.status}
                           </span>
                         )}
+                        </div>
                       </article>
                     );
                   }
