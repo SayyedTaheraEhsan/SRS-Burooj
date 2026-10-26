@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import WebsiteReviews from "./components/WebsiteReviews";
 
-const API_BASE = "http://localhost:5000";
+import API_BASE_URL from "./apiBase";
+const API_BASE = API_BASE_URL;
 
 const defaultSettings = {
   logo: "/srs-burooj-logo.png",
@@ -632,7 +633,7 @@ function Home() {
     {
       name: "Instagram",
       url: settings.instagram,
-      icon: "◎",
+      icon: "â—Ž",
     },
     {
       name: "Facebook",
@@ -642,7 +643,7 @@ function Home() {
     {
       name: "YouTube",
       url: settings.youtube,
-      icon: "▶",
+      icon: "â–¶",
     },
   ].filter((item) => item.url);
 
@@ -906,7 +907,7 @@ function Home() {
                 <span
                   style={iconCircleStyle}
                 >
-                  ☎
+                  â˜Ž
                 </span>
                 Call
               </a>
@@ -922,7 +923,7 @@ function Home() {
                 <span
                   style={iconCircleStyle}
                 >
-                  ◉
+                  â—‰
                 </span>
                 WhatsApp
               </a>
@@ -936,7 +937,7 @@ function Home() {
                 <span
                   style={iconCircleStyle}
                 >
-                  ✉
+                  âœ‰
                 </span>
                 Email
               </a>
@@ -1038,7 +1039,7 @@ function Home() {
                             projectIconStyle
                           }
                         >
-                          ⌂
+                          âŒ‚
                         </div>
 
                         <h3
@@ -1203,7 +1204,7 @@ function Home() {
                                 "38px",
                             }}
                           >
-                            🏠
+                            ðŸ 
                           </span>
 
                           <span
@@ -1378,7 +1379,7 @@ function Home() {
                                     "#155eef",
                                 }}
                               >
-                                ₹{" "}
+                                â‚¹{" "}
                                 {formatAmount(
                                   unitPrice(
                                     unit
@@ -2034,7 +2035,7 @@ function Home() {
                   "12px",
               }}
             >
-              ©{" "}
+              Â©{" "}
               {new Date().getFullYear()}{" "}
               SRS Burooj. All rights
               reserved.
@@ -2075,7 +2076,7 @@ function formatAmount(value) {
 
   const numeric = Number(
     String(value).replace(
-      /[₹,\s]/g,
+      /[â‚¹,\s]/g,
       ""
     )
   );

@@ -1,8 +1,10 @@
-import { adminFetch } from "./adminApi";
+﻿import { adminFetch } from "./adminApi";
 
 import { useEffect, useMemo, useState } from "react";
 
-const API_BASE = "http://localhost:5000";
+import API_BASE_URL from "../apiBase";
+
+const API_BASE = API_BASE_URL;
 const UNITS_API = `${API_BASE}/api/units`;
 
 const PROPERTY_TYPES = [
@@ -144,7 +146,7 @@ function LargeDropdown({
         <span>{value || placeholder}</span>
 
         <span style={styles.dropdownArrow}>
-          {open ? "▲" : "▼"}
+          {open ? "â–²" : "â–¼"}
         </span>
       </button>
 
@@ -173,7 +175,7 @@ function LargeDropdown({
 
                 {selected && (
                   <span style={styles.dropdownCheck}>
-                    ✓
+                    âœ“
                   </span>
                 )}
               </button>
@@ -956,7 +958,7 @@ function AdminProjects() {
       value === undefined ||
       value === ""
     ) {
-      return "—";
+      return "â€”";
     }
 
     const number =
@@ -966,7 +968,7 @@ function AdminProjects() {
       return String(value);
     }
 
-    return `₹${number.toLocaleString(
+    return `â‚¹${number.toLocaleString(
       "en-IN"
     )}`;
   }
@@ -1049,7 +1051,7 @@ function AdminProjects() {
           >
             {unitsLoading
               ? "Refreshing..."
-              : "↻ Refresh Projects & Units"}
+              : "â†» Refresh Projects & Units"}
           </button>
 
           {editingId && (
@@ -1081,7 +1083,7 @@ function AdminProjects() {
                 styles.formHeaderEyebrow
               }
             >
-              SRS BUROOJ • PROJECT SETUP
+              SRS BUROOJ â€¢ PROJECT SETUP
             </div>
 
             <h2
@@ -1273,7 +1275,7 @@ function AdminProjects() {
                   styles.formSectionTitle
                 }
               >
-                Property Structure —
+                Property Structure â€”
                 Basic Details
               </h3>
 
@@ -1757,7 +1759,7 @@ function AdminProjects() {
                           styles.removeFacilityButton
                         }
                       >
-                        ×
+                        Ã—
                       </button>
                     </div>
                   )
@@ -1931,9 +1933,9 @@ function AdminProjects() {
                             styles.locationText
                           }
                         >
-                          📍{" "}
+                          ðŸ“{" "}
                           {project.location ||
-                            "—"}
+                            "â€”"}
                         </p>
                       </div>
 
@@ -2108,7 +2110,7 @@ function AdminProjects() {
                             unitsLoading
                           }
                         >
-                          ↻ Refresh
+                          â†» Refresh
                         </button>
                       </div>
 
@@ -2215,12 +2217,12 @@ function AdminProjects() {
 
                                       <span>
                                         {unit.property_type ||
-                                          "—"}
+                                          "â€”"}
                                       </span>
 
                                       <span>
                                         {unit.unit_type ||
-                                          "—"}
+                                          "â€”"}
                                       </span>
                                     </div>
 
@@ -2233,7 +2235,7 @@ function AdminProjects() {
                                         Floor:{" "}
                                         <strong>
                                           {unit.floor ||
-                                            "—"}
+                                            "â€”"}
                                         </strong>
                                       </span>
 
@@ -2242,7 +2244,7 @@ function AdminProjects() {
                                         <strong>
                                           {unit.carpet_area ||
                                             unit.built_up_area ||
-                                            "—"}
+                                            "â€”"}
                                           {unit.carpet_area ||
                                           unit.built_up_area
                                             ? " sq.ft."
@@ -3841,4 +3843,5 @@ const styles = {
 };
 
 export default AdminProjects;
+
 
