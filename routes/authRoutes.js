@@ -78,38 +78,39 @@ writeDebug("EMAIL ENV CHECK", {
   smtpSecure: true,
 });
 // =====================================================
-// GMAIL SMTP EMAIL SERVICE
+// RESEND API EMAIL SERVICE
 // =====================================================
 
-const emailTransporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 async function sendEmail({ to, subject, html }) {
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
+  const apiKey = process.env.RESEND_API_KEY;
+  const from =
+    process.env.RESEND_FROM_EMAIL ||
+    "SRS Burooj <onboarding@resend.dev>";
 
-  if (!emailUser || !emailPass) {
+  if (!apiKey) {
     throw new Error(
-      "Email service is not configured. Please check EMAIL_USER and EMAIL_PASS."
+      "Email service is not configured. Please check RESEND_API_KEY."
     );
   }
 
-  const result = await emailTransporter.sendMail({
-    from: {
-      name: "SRS Burooj",
-      address: emailUser,
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
-    to,
-    subject,
-    html,
+    body: JSON.stringify({ from, to, subject, html }),
   });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      `Resend email error (${response.status}): ${
+        result.message || result.name || "Unknown error"
+      }`
+    );
+  }
 
   return result;
 }
