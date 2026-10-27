@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 
 const router = express.Router();
 
@@ -78,42 +78,55 @@ writeDebug("EMAIL ENV CHECK", {
   smtpSecure: true,
 });
 // =====================================================
-// RESEND API EMAIL SERVICE
+// BREVO API EMAIL SERVICE
 // =====================================================
 
 async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from =
-    process.env.RESEND_FROM_EMAIL ||
-    "SRS Burooj <onboarding@resend.dev>";
+  const apiKey = process.env.BREVO_API_KEY;
+  const senderEmail = process.env.BREVO_FROM_EMAIL;
 
   if (!apiKey) {
-    throw new Error(
-      "Email service is not configured. Please check RESEND_API_KEY."
-    );
+    throw new Error("Email service is not configured. Please check BREVO_API_KEY.");
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
+  if (!senderEmail) {
+    throw new Error("Email sender is not configured. Please check BREVO_FROM_EMAIL.");
+  }
+
+  const recipients = Array.isArray(to) ? to : [to];
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      "api-key": apiKey,
       "Content-Type": "application/json",
+      "Accept": "application/json",
     },
-    body: JSON.stringify({ from, to, subject, html }),
+    body: JSON.stringify({
+      sender: {
+        name: process.env.BREVO_FROM_NAME || "SRS Burooj",
+        email: senderEmail,
+      },
+      to: recipients.map((recipient) =>
+        typeof recipient === "string" ? { email: recipient } : recipient
+      ),
+      subject,
+      htmlContent: html,
+    }),
   });
 
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
     throw new Error(
-      `Resend email error (${response.status}): ${
-        result.message || result.name || "Unknown error"
-      }`
+      "Brevo email error (" + response.status + "): " +
+      (result.message || result.code || "Unknown error")
     );
   }
 
   return result;
 }
+
 // =====================================================
 // FRONTEND URL HELPER
 // =====================================================
