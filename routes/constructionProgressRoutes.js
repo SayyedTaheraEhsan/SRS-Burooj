@@ -4,83 +4,87 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { v2: cloudinary } = require("cloudinary");
 const db = require("../db");
 
-// ======================================================
-// UPLOAD FOLDER
-// ======================================================
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const uploadDir = path.join(
-  __dirname,
-  "../uploads/construction"
-);
+// Existing local files are retained.
+// New construction progress photos will be uploaded to Cloudinary.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(jpe?g|png|webp)$/i.test(
+      path.extname(file.originalname)
+    );
+    const mimeAllowed = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ].includes(file.mimetype);
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+    if (allowed && mimeAllowed) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPG, JPEG, PNG and WEBP images are allowed"));
+    }
+  },
+});
+
+function uploadConstructionPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "srs-burooj/construction",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+
+    stream.end(file.buffer);
+  });
 }
 
-// ======================================================
-// MULTER STORAGE
-// ======================================================
+// Only remove files belonging to the old local uploads folder.
+// Do not delete Cloudinary assets or unrelated/private documents here.
+function removeOldLocalPhoto(photoUrl) {
+  if (
+    !photoUrl ||
+    !photoUrl.startsWith("/uploads/construction/")
+  ) {
+    return;
+  }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-
-  filename: (req, file, cb) => {
-    const uniqueName =
-      "construction-" +
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-
-    cb(null, uniqueName);
-  },
-});
-
-// ======================================================
-// FILE FILTER
-// ======================================================
-
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|webp/;
-
-  const extension = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
+  const filename = path.basename(photoUrl);
+  const filePath = path.join(
+    __dirname,
+    "../uploads/construction",
+    filename
   );
 
-  const mimeType = allowedTypes.test(file.mimetype);
-
-  if (extension && mimeType) {
-    cb(null, true);
-  } else {
-    cb(
-      new Error(
-        "Only JPG, JPEG, PNG and WEBP images are allowed"
-      )
-    );
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch (error) {
+      console.error("Could not remove old local construction photo:", error.message);
+    }
   }
-};
+}
 
-const upload = multer({
-  storage,
-  fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-});
-
-// ======================================================
 // ADD CONSTRUCTION PROGRESS
-// ======================================================
-
 router.post(
   "/",
   authenticateAdmin,
   upload.single("progress_photo"),
-  (req, res) => {
+  async (req, res) => {
     const {
       customer_property_id,
       progress_date,
@@ -95,7 +99,10 @@ router.post(
       });
     }
 
-    if (progress_percentage === undefined) {
+    if (
+      progress_percentage === undefined ||
+      progress_percentage === ""
+    ) {
       return res.status(400).json({
         success: false,
         message: "Progress percentage is required",
@@ -109,9 +116,17 @@ router.post(
       });
     }
 
-    const photoPath =
-      "/uploads/construction/" +
-      req.file.filename;
+    let photoUrl;
+
+    try {
+      photoUrl = await uploadConstructionPhoto(req.file);
+    } catch (error) {
+      console.error("Construction photo upload failed:", error.message);
+      return res.status(502).json({
+        success: false,
+        message: "Unable to upload construction photo. Please try again.",
+      });
+    }
 
     const sql = `
       INSERT INTO construction_updates
@@ -130,39 +145,31 @@ router.post(
       [
         customer_property_id,
         progress_percentage,
-        photoPath,
+        photoUrl,
         update_note || null,
         progress_date || null,
       ],
       (err, result) => {
         if (err) {
-          console.error(
-            "Error saving construction progress:",
-            err
-          );
-
+          console.error("Error saving construction progress:", err);
           return res.status(500).json({
             success: false,
             message: "Failed to save construction progress",
           });
         }
 
-        res.status(201).json({
+        return res.status(201).json({
           success: true,
-          message:
-            "Construction progress updated successfully",
+          message: "Construction progress updated successfully",
           progressId: result.insertId,
-          photo: photoPath,
+          photo: photoUrl,
         });
       }
     );
   }
 );
 
-// ======================================================
 // GET ALL CONSTRUCTION PROGRESS
-// ======================================================
-
 router.get("/", (req, res) => {
   const sql = `
     SELECT
@@ -179,28 +186,18 @@ router.get("/", (req, res) => {
 
   db.query(sql, (err, results) => {
     if (err) {
-      console.error(
-        "Error fetching all construction progress:",
-        err
-      );
-
+      console.error("Error fetching construction progress:", err);
       return res.status(500).json({
         success: false,
         message: "Failed to fetch construction progress",
       });
     }
 
-    res.json({
-      success: true,
-      progress: results,
-    });
+    return res.json({ success: true, progress: results });
   });
 });
 
-// ======================================================
 // GET CUSTOMER PROPERTY PROGRESS HISTORY
-// ======================================================
-
 router.get("/:customerPropertyId", (req, res) => {
   const sql = `
     SELECT
@@ -216,41 +213,24 @@ router.get("/:customerPropertyId", (req, res) => {
     ORDER BY update_date DESC, created_at DESC
   `;
 
-  db.query(
-    sql,
-    [req.params.customerPropertyId],
-    (err, results) => {
-      if (err) {
-        console.error(
-          "Error fetching construction progress:",
-          err
-        );
-
-        return res.status(500).json({
-          success: false,
-          message: "Failed to fetch construction progress",
-        });
-      }
-
-      res.json({
-        success: true,
-        progress: results,
+  db.query(sql, [req.params.customerPropertyId], (err, results) => {
+    if (err) {
+      console.error("Error fetching property progress:", err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch construction progress",
       });
     }
-  );
-});
 
-// ======================================================
-// EDIT CONSTRUCTION PROGRESS
-// ======================================================
-
+    return res.json({ success: true, progress: results });
+  });
+});// EDIT CONSTRUCTION PROGRESS
 router.put(
   "/:id",
   authenticateAdmin,
   upload.single("progress_photo"),
-  (req, res) => {
+  async (req, res) => {
     const id = req.params.id;
-
     const {
       customer_property_id,
       progress_date,
@@ -265,37 +245,29 @@ router.put(
       });
     }
 
-    if (progress_percentage === undefined) {
+    if (
+      progress_percentage === undefined ||
+      progress_percentage === ""
+    ) {
       return res.status(400).json({
         success: false,
         message: "Progress percentage is required",
       });
     }
 
-    // First get old photo
-    const selectSql = `
-      SELECT photo_url
-      FROM construction_updates
-      WHERE id = ?
-    `;
-
     db.query(
-      selectSql,
+      "SELECT photo_url FROM construction_updates WHERE id = ?",
       [id],
-      (selectErr, results) => {
+      async (selectErr, results) => {
         if (selectErr) {
-          console.error(
-            "Error finding construction update:",
-            selectErr
-          );
-
+          console.error("Error finding construction update:", selectErr);
           return res.status(500).json({
             success: false,
             message: "Failed to find construction update",
           });
         }
 
-        if (results.length === 0) {
+        if (!results.length) {
           return res.status(404).json({
             success: false,
             message: "Construction update not found",
@@ -303,184 +275,129 @@ router.put(
         }
 
         const oldPhoto = results[0].photo_url;
-
-        let sql;
-        let values;
+        let newPhoto = oldPhoto;
 
         if (req.file) {
-          const newPhotoPath =
-            "/uploads/construction/" +
-            req.file.filename;
-
-          sql = `
-            UPDATE construction_updates
-            SET
-              customer_property_id = ?,
-              progress = ?,
-              photo_url = ?,
-              update_note = ?,
-              update_date = ?
-            WHERE id = ?
-          `;
-
-          values = [
-            customer_property_id,
-            progress_percentage,
-            newPhotoPath,
-            update_note || null,
-            progress_date || null,
-            id,
-          ];
-        } else {
-          sql = `
-            UPDATE construction_updates
-            SET
-              customer_property_id = ?,
-              progress = ?,
-              update_note = ?,
-              update_date = ?
-            WHERE id = ?
-          `;
-
-          values = [
-            customer_property_id,
-            progress_percentage,
-            update_note || null,
-            progress_date || null,
-            id,
-          ];
+          try {
+            newPhoto = await uploadConstructionPhoto(req.file);
+          } catch (error) {
+            console.error("Construction photo upload failed:", error.message);
+            return res.status(502).json({
+              success: false,
+              message: "Unable to upload construction photo. Please try again.",
+            });
+          }
         }
 
-        db.query(
-          sql,
-          values,
-          (updateErr, updateResult) => {
-            if (updateErr) {
-              console.error(
-                "Error updating construction progress:",
-                updateErr
-              );
+        const sql = req.file
+          ? `UPDATE construction_updates
+             SET customer_property_id = ?, progress = ?, photo_url = ?,
+                 update_note = ?, update_date = ?
+             WHERE id = ?`
+          : `UPDATE construction_updates
+             SET customer_property_id = ?, progress = ?,
+                 update_note = ?, update_date = ?
+             WHERE id = ?`;
 
-              return res.status(500).json({
-                success: false,
-                message:
-                  "Failed to update construction progress",
-              });
-            }
+        const values = req.file
+          ? [
+              customer_property_id,
+              progress_percentage,
+              newPhoto,
+              update_note || null,
+              progress_date || null,
+              id,
+            ]
+          : [
+              customer_property_id,
+              progress_percentage,
+              update_note || null,
+              progress_date || null,
+              id,
+            ];
 
-            if (updateResult.affectedRows === 0) {
-              return res.status(404).json({
-                success: false,
-                message:
-                  "Construction update not found",
-              });
-            }
-
-            // Delete old photo only when new photo uploaded
-            if (req.file && oldPhoto) {
-              const oldFilePath = path.join(
-                __dirname,
-                "..",
-                oldPhoto
-              );
-
-              if (fs.existsSync(oldFilePath)) {
-                fs.unlinkSync(oldFilePath);
-              }
-            }
-
-            res.json({
-              success: true,
-              message:
-                "Construction progress updated successfully",
-            });
-          }
-        );
-      }
-    );
-  }
-);
-
-// ======================================================
-// DELETE CONSTRUCTION PROGRESS
-// ======================================================
-
-router.delete("/:id", authenticateAdmin, (req, res) => {
-  const id = req.params.id;
-
-  const selectSql = `
-    SELECT photo_url
-    FROM construction_updates
-    WHERE id = ?
-  `;
-
-  db.query(
-    selectSql,
-    [id],
-    (selectErr, results) => {
-      if (selectErr) {
-        console.error(
-          "Error finding construction photo:",
-          selectErr
-        );
-
-        return res.status(500).json({
-          success: false,
-          message: "Failed to find construction update",
-        });
-      }
-
-      const photoUrl =
-        results.length > 0
-          ? results[0].photo_url
-          : null;
-
-      const deleteSql = `
-        DELETE FROM construction_updates
-        WHERE id = ?
-      `;
-
-      db.query(
-        deleteSql,
-        [id],
-        (deleteErr, deleteResult) => {
-          if (deleteErr) {
-            console.error(
-              "Error deleting construction progress:",
-              deleteErr
-            );
-
+        db.query(sql, values, (updateErr, updateResult) => {
+          if (updateErr) {
+            console.error("Error updating construction progress:", updateErr);
             return res.status(500).json({
               success: false,
-              message:
-                "Failed to delete construction progress",
+              message: "Failed to update construction progress",
             });
           }
 
-          if (deleteResult.affectedRows === 0) {
+          if (updateResult.affectedRows === 0) {
             return res.status(404).json({
               success: false,
               message: "Construction update not found",
             });
           }
 
-          // Delete physical photo
-          if (photoUrl) {
-            const filePath = path.join(
-              __dirname,
-              "..",
-              photoUrl
-            );
-
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-            }
+          // Only remove an old local photo after a successful update.
+          // Existing Cloudinary photos are deliberately left untouched.
+          if (req.file) {
+            removeOldLocalPhoto(oldPhoto);
           }
 
-          res.json({
+          return res.json({
             success: true,
-            message:
-              "Construction progress deleted successfully",
+            message: "Construction progress updated successfully",
+            photo: newPhoto,
+          });
+        });
+      }
+    );
+  }
+);// DELETE CONSTRUCTION PROGRESS
+router.delete("/:id", authenticateAdmin, (req, res) => {
+  const id = req.params.id;
+
+  db.query(
+    "SELECT photo_url FROM construction_updates WHERE id = ?",
+    [id],
+    (selectErr, results) => {
+      if (selectErr) {
+        console.error("Error finding construction photo:", selectErr);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to find construction update",
+        });
+      }
+
+      if (!results.length) {
+        return res.status(404).json({
+          success: false,
+          message: "Construction update not found",
+        });
+      }
+
+      const photoUrl = results[0].photo_url;
+
+      db.query(
+        "DELETE FROM construction_updates WHERE id = ?",
+        [id],
+        (deleteErr, deleteResult) => {
+          if (deleteErr) {
+            console.error("Error deleting construction progress:", deleteErr);
+            return res.status(500).json({
+              success: false,
+              message: "Failed to delete construction progress",
+            });
+          }
+
+          if (!deleteResult.affectedRows) {
+            return res.status(404).json({
+              success: false,
+              message: "Construction update not found",
+            });
+          }
+
+          // Only delete old local construction files.
+          // Do not delete Cloudinary assets or private customer documents.
+          removeOldLocalPhoto(photoUrl);
+
+          return res.json({
+            success: true,
+            message: "Construction progress deleted successfully",
           });
         }
       );
