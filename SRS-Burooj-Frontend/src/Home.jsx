@@ -1003,14 +1003,21 @@ function Home() {
           <div style={quickContactContainer}>
             {phoneLink && (
               <a href={phoneLink} style={quickContactStyle} aria-label="Call Us">
-                <span style={iconCircleStyle}>WA</span>
+                <span style={iconCircleStyle}>☎</span>
+                Call Us
+              </a>
+            )}
+
+            {whatsappLink && (
+              <a href={whatsappLink} style={quickContactStyle} aria-label="WhatsApp Us" target="_blank" rel="noreferrer">
+                <span style={iconCircleStyle}>☏</span>
                 WhatsApp
               </a>
             )}
 
             {emailLink && (
               <a href={emailLink} style={quickContactStyle} aria-label="Email Us">
-                <span style={iconCircleStyle}>TEL</span>
+                <span style={iconCircleStyle}>✉</span>
                 Email Us
               </a>
             )}
@@ -1026,9 +1033,9 @@ function Home() {
                   }}
                   aria-label="Open social media links"
                 >
-                <span style={iconCircleStyle}>TEL</span>
+                <span style={iconCircleStyle}>🔗</span>
                   Social Media
-                  <span aria-hidden="true">ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¾</span>
+                  <span aria-hidden="true">⌄</span>
                 </summary>
 
                 <div
@@ -1333,7 +1340,7 @@ function Home() {
                                 "38px",
                             }}
                           >
-                            {"BLDG"}
+                            {"🏢"}
                           </span>
 
                           <span
