@@ -1073,7 +1073,7 @@ function Home() {
                         fontWeight: "700",
                       }}
                     >
-                <span style={iconCircleStyle}>TEL</span>
+                <span style={iconCircleStyle}>{social.icon}</span>
                       {social.name}
                     </a>
                   ))}
@@ -1172,7 +1172,7 @@ function Home() {
                               margin: "22px 22px 16px",
                             }}
                           >
-                            ðŸ¢
+                            🏢
                           </div>
                         )}
                         <div style={{ padding: "0 24px 24px" }}>
