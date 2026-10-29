@@ -941,7 +941,7 @@ function AdminInquiries() {
       =================================================== */}
       <div
         style={{
-          background: "linear-gradient(135deg, #0b3b82 0%, #071a33 100%)",
+          background: "#071a33",
           color: "#ffffff",
           borderRadius: "14px",
           padding: "22px 24px",
