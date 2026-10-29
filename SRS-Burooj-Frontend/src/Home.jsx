@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import WebsiteReviews from "./components/WebsiteReviews";
 
 import API_BASE_URL from "./apiBase";
@@ -51,33 +51,58 @@ function Home() {
   // WEBSITE SETTINGS
   // =========================================================
 
-  const loadWebsiteSettings = () => {
+  const loadWebsiteSettings = async () => {
+    let parsed = null;
+
+    // Load the latest saved settings from the server first.
     try {
-      const saved = localStorage.getItem("srsWebsiteSettings");
-      if (!saved) {
-        setSettings({ ...defaultSettings });
-        setHomeMediaIndex(0);
-        return;
-      }
+      const response = await fetch(`${API_BASE}/api/website-settings`);
 
-      const parsed = JSON.parse(saved);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("Invalid website settings format");
-      }
+      if (response.ok) {
+        const result = await response.json();
 
-      setSettings({
-        ...defaultSettings,
-        ...parsed,
-        homeMedia: Array.isArray(parsed.homeMedia) ? parsed.homeMedia : [],
-      });
-      setHomeMediaIndex(0);
+        if (
+          result?.success &&
+          result.settings &&
+          typeof result.settings === "object" &&
+          !Array.isArray(result.settings)
+        ) {
+          parsed = result.settings;
+        }
+      }
     } catch (error) {
-      console.error("Website settings error:", error);
-      setSettings({ ...defaultSettings });
-      setHomeMediaIndex(0);
+      console.warn("Could not load website settings from server:", error);
     }
-  };
 
+    // Fall back to local settings if the server has no saved settings.
+    if (!parsed) {
+      try {
+        const saved = localStorage.getItem("srsWebsiteSettings");
+
+        if (saved) {
+          const localSettings = JSON.parse(saved);
+
+          if (
+            localSettings &&
+            typeof localSettings === "object" &&
+            !Array.isArray(localSettings)
+          ) {
+            parsed = localSettings;
+          }
+        }
+      } catch (error) {
+        console.error("Local website settings error:", error);
+      }
+    }
+
+    setSettings({
+      ...defaultSettings,
+      ...(parsed || {}),
+      homeMedia: Array.isArray(parsed?.homeMedia) ? parsed.homeMedia : [],
+    });
+
+    setHomeMediaIndex(0);
+  };
   // =========================================================
   // PROJECTS
   // =========================================================
@@ -691,23 +716,27 @@ function Home() {
       ).replace(/\s+/g, "")}`
     : "";
 
+  const emailSubject = "Property Inquiry - SRS Burooj";
+  const emailBody = "Dear SRS Burooj Team,\n\nI am interested in your property projects. Kindly share the available projects, unit details, pricing, payment plans, and booking process.\n\nThank you.\n\nRegards";
+
   const emailLink = settings.email
-    ? `mailto:${settings.email}`
+    ? `mailto:${settings.email}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
     : "";
 
   const whatsappNumber = String(
     settings.whatsapp || ""
   ).replace(/\D/g, "");
 
-  const whatsappLink = whatsappNumber
-    ? `https://wa.me/${whatsappNumber}`
-    : "";
+  const whatsappMessage = "Hello SRS Burooj Team, I am interested in your property projects. Please share the available projects, unit details, pricing, and booking information. Thank you.";
 
+  const whatsappLink = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`
+    : "";
   const socialLinks = [
     {
       name: "Instagram",
       url: settings.instagram,
-      icon: "â—Ž",
+      icon: "◎",
     },
     {
       name: "Facebook",
@@ -717,7 +746,7 @@ function Home() {
     {
       name: "YouTube",
       url: settings.youtube,
-      icon: "â–¶",
+      icon: "▶",
     },
   ].filter((item) => item.url);
 
@@ -836,8 +865,14 @@ function Home() {
               href="/customer-login"
               style={{
                 ...navLinkStyle,
-                color: "#155eef",
+                color: "#123b75",
+                background: "#ffffff",
                 fontWeight: "800",
+                padding: "10px 16px",
+                borderRadius: "10px",
+                border: "2px solid #ffffff",
+                boxShadow: "0 3px 10px rgba(0,0,0,0.18)",
+                display: "inline-block",
               }}
             >
               Customer Login
@@ -963,88 +998,85 @@ function Home() {
           CONTACT ICONS
       ===================================================== */}
 
-      {(phoneLink ||
-        whatsappLink ||
-        emailLink ||
-        socialLinks.length > 0) && (
-        <section
-          style={quickContactSection}
-        >
-          <div
-            style={quickContactContainer}
-          >
+      {(phoneLink || whatsappLink || emailLink || socialLinks.length > 0) && (
+        <section style={quickContactSection}>
+          <div style={quickContactContainer}>
             {phoneLink && (
-              <a
-                href={phoneLink}
-                style={quickContactStyle}
-              >
-                <span
-                  style={iconCircleStyle}
-                >
-                  â˜Ž
-                </span>
-                Call
-              </a>
-            )}
-
-            {whatsappLink && (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                style={quickContactStyle}
-              >
-                <span
-                  style={iconCircleStyle}
-                >
-                  â—‰
-                </span>
+              <a href={phoneLink} style={quickContactStyle} aria-label="Call Us">
+                <span style={iconCircleStyle}>WA</span>
                 WhatsApp
               </a>
             )}
 
             {emailLink && (
-              <a
-                href={emailLink}
-                style={quickContactStyle}
-              >
-                <span
-                  style={iconCircleStyle}
-                >
-                  âœ‰
-                </span>
-                Email
+              <a href={emailLink} style={quickContactStyle} aria-label="Email Us">
+                <span style={iconCircleStyle}>TEL</span>
+                Email Us
               </a>
             )}
 
-            {socialLinks.map(
-              (social) => (
-                <a
-                  key={social.name}
-                  href={social.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={
-                    quickContactStyle
-                  }
+            {socialLinks.length > 0 && (
+              <details style={{ position: "relative" }}>
+                <summary
+                  style={{
+                    ...quickContactStyle,
+                    listStyle: "none",
+                    cursor: "pointer",
+                    userSelect: "none",
+                  }}
+                  aria-label="Open social media links"
                 >
-                  <span
-                    style={
-                      iconCircleStyle
-                    }
-                  >
-                    {social.icon}
-                  </span>
+                <span style={iconCircleStyle}>TEL</span>
+                  Social Media
+                  <span aria-hidden="true">ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¾</span>
+                </summary>
 
-                  {social.name}
-                </a>
-              )
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    zIndex: 1100,
+                    minWidth: "180px",
+                    padding: "8px",
+                    display: "grid",
+                    gap: "6px",
+                    background: "#ffffff",
+                    border: "1px solid #dbe5f2",
+                    borderRadius: "12px",
+                    boxShadow: "0 10px 28px rgba(11,31,58,.18)",
+                  }}
+                >
+                  {socialLinks.map((social) => (
+                    <a
+                      key={social.name}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        padding: "10px 12px",
+                        borderRadius: "8px",
+                        color: "#123b75",
+                        background: "#f5f8ff",
+                        textDecoration: "none",
+                        fontSize: "14px",
+                        fontWeight: "700",
+                      }}
+                    >
+                <span style={iconCircleStyle}>TEL</span>
+                      {social.name}
+                    </a>
+                  ))}
+                </div>
+              </details>
             )}
           </div>
         </section>
       )}
-
-      {/* =====================================================
+{/* =====================================================
           PROJECTS
       ===================================================== */}
 
@@ -1133,7 +1165,7 @@ function Home() {
                               margin: "22px 22px 16px",
                             }}
                           >
-                            🏢
+                            ðŸ¢
                           </div>
                         )}
                         <div style={{ padding: "0 24px 24px" }}>
@@ -1301,7 +1333,7 @@ function Home() {
                                 "38px",
                             }}
                           >
-                            ðŸ 
+                            {"BLDG"}
                           </span>
 
                           <span
@@ -1476,7 +1508,7 @@ function Home() {
                                     "#155eef",
                                 }}
                               >
-                                â‚¹{" "}
+                                ₹{" "}
                                 {formatAmount(
                                   unitPrice(
                                     unit
@@ -2132,7 +2164,7 @@ function Home() {
                   "12px",
               }}
             >
-              Â©{" "}
+              ©{" "}
               {new Date().getFullYear()}{" "}
               SRS Burooj. All rights
               reserved.
@@ -2173,7 +2205,7 @@ function formatAmount(value) {
 
   const numeric = Number(
     String(value).replace(
-      /[â‚¹,\s]/g,
+      /[₹,\s]/g,
       ""
     )
   );
@@ -2210,11 +2242,11 @@ const containerStyle = {
 
 const headerContainerStyle = {
   ...containerStyle,
-  minHeight: "74px",
+  minHeight: "64px",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: "25px",
+  gap: "16px",
   flexWrap: "wrap",
 };
 
@@ -2222,19 +2254,17 @@ const headerStyle = {
   position: "sticky",
   top: 0,
   zIndex: 1000,
-  background: "#ffffff",
-  borderBottom:
-    "1px solid #dbe5f2",
-  boxShadow:
-    "0 3px 15px rgba(11,31,58,.07)",
+  background: "linear-gradient(135deg, #0b1f3a, #155eef)",
+  borderBottom: "1px solid #1e40af",
+  boxShadow: "0 4px 16px rgba(11,31,58,.18)",
 };
 
 const brandStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "11px",
+  gap: "10px",
   textDecoration: "none",
-  color: "#0b1f3a",
+  color: "#ffffff",
 };
 
 const logoStyle = {
@@ -2249,23 +2279,23 @@ const brandNameStyle = {
 };
 
 const brandSubStyle = {
-  fontSize: "11px",
-  color: "#667085",
-  letterSpacing: "1.4px",
+  fontSize: "10px",
+  color: "#dbeafe",
+  letterSpacing: "1.2px",
 };
 
 const navStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "flex-end",
-  gap: "22px",
+  gap: "16px",
   flexWrap: "wrap",
 };
 
 const navLinkStyle = {
-  color: "#344054",
+  color: "#ffffff",
   textDecoration: "none",
-  fontSize: "15px",
+  fontSize: "14px",
   fontWeight: "700",
 };
 
@@ -2349,20 +2379,18 @@ const heroTextStyle = {
 };
 
 const quickContactSection = {
-  background: "#ffffff",
-  borderBottom:
-    "1px solid #e1e8f2",
+  background: "linear-gradient(135deg, #0b1f3a, #155eef)",
+  borderBottom: "1px solid #c9d9f5",
 };
 
 const quickContactContainer = {
-  width:
-    "min(1180px,calc(100% - 36px))",
+  width: "min(1180px,calc(100% - 36px))",
   margin: "0 auto",
-  padding: "18px 0",
+  padding: "9px 0",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "12px",
+  gap: "10px",
   flexWrap: "wrap",
 };
 
@@ -2370,27 +2398,28 @@ const quickContactStyle = {
   display: "inline-flex",
   alignItems: "center",
   gap: "8px",
-  padding: "8px 13px",
+  padding: "7px 12px",
   borderRadius: "25px",
-  background: "#f5f8ff",
-  border:
-    "1px solid #dce6f2",
-  color: "#10233f",
+  background: "#ffffff",
+  border: "1px solid rgba(255,255,255,.8)",
+  color: "#123b75",
   textDecoration: "none",
   fontSize: "14px",
   fontWeight: "700",
+  cursor: "pointer",
 };
 
 const iconCircleStyle = {
-  width: "27px",
-  height: "27px",
+  width: "28px",
+  height: "28px",
+  flexShrink: 0,
   borderRadius: "50%",
   background: "#155eef",
   color: "#ffffff",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "13px",
+  fontSize: "15px",
   fontWeight: "800",
 };
 

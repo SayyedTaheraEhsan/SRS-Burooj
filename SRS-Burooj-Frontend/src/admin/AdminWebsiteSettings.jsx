@@ -1,7 +1,8 @@
 import { adminFetch } from "./adminApi";
+import API_BASE_URL from "../apiBase";
 import { useEffect, useState } from "react";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = API_BASE_URL;
 
 const defaultSettings = {
   logo: "/srs-burooj-logo.png",
@@ -79,12 +80,30 @@ function AdminWebsiteSettings() {
   const handleSave = async () => {
     setUploading(true);
     setMessage("");
+
     try {
       const homeMedia = [];
+
       for (const item of settings.homeMedia || []) {
-        homeMedia.push(item.src?.startsWith("data:") ? await uploadDataUrl(item) : item);
+        homeMedia.push(
+          item.src?.startsWith("data:") ? await uploadDataUrl(item) : item
+        );
       }
+
       const updatedSettings = { ...settings, homeMedia };
+
+      const response = await adminFetch(`${API_BASE}/api/website-settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings: updatedSettings }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to save website settings.");
+      }
+
       localStorage.setItem("srsWebsiteSettings", JSON.stringify(updatedSettings));
       setSettings(updatedSettings);
       window.dispatchEvent(new Event("srs-website-settings-updated"));
@@ -93,7 +112,9 @@ function AdminWebsiteSettings() {
       setTimeout(() => setMessage(""), 4000);
     } catch (error) {
       console.error("Website settings save/upload error:", error);
-      setMessage(error.message || "Unable to save settings. Check that the backend is running.");
+      setMessage(
+        error.message || "Unable to save settings. Check your admin login and backend."
+      );
     } finally {
       setUploading(false);
     }
@@ -523,7 +544,7 @@ function AdminWebsiteSettings() {
                   marginBottom: "12px",
                 }}
               >
-                🖼️
+                ðŸ–¼ï¸
               </div>
 
               <div
@@ -543,7 +564,7 @@ function AdminWebsiteSettings() {
                   lineHeight: "1.5",
                 }}
               >
-                Add 2–3 photos or videos using the button above.
+                Add 2â€“3 photos or videos using the button above.
               </div>
             </div>
           )}
@@ -690,7 +711,7 @@ function AdminWebsiteSettings() {
                           fontSize: "16px",
                         }}
                       >
-                        ↑
+                        â†‘
                       </button>
 
                       <button
@@ -725,7 +746,7 @@ function AdminWebsiteSettings() {
                           fontSize: "16px",
                         }}
                       >
-                        ↓
+                        â†“
                       </button>
 
                       <button

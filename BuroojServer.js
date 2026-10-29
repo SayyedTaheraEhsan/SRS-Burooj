@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
@@ -30,6 +30,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const projectMediaRoutes = require("./routes/projectMediaRoutes");
 const unitMediaRoutes = require("./routes/unitMediaRoutes");
 const websiteMediaRoutes = require("./routes/websiteMediaRoutes");
+const websiteSettingsRoutes = require("./routes/websiteSettingsRoutes");
 
 const PORT = process.env.PORT || 5000;
 
@@ -83,6 +84,7 @@ app.use("/api/unit-media", unitMediaRoutes);
 
 app.use("/api/project-media", projectMediaRoutes);
 app.use("/api/website-media", websiteMediaRoutes);
+app.use("/api/website-settings", websiteSettingsRoutes);
 
 // ======================================================
 // CUSTOMER PAYMENTS
@@ -128,6 +130,3 @@ app.listen(PORT, () => {
 });
 
 startNotificationScheduler();
-
-
-
