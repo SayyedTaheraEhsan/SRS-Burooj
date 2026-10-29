@@ -2002,8 +2002,8 @@ function CustomerDashboard() {
         ================================================= */
 
         .loading-logo {
-          width: 130px;
-          height: 75px;
+          width: 82px;
+          height: 48px;
           display: flex;
           align-items: center;
           justify-content: center;
