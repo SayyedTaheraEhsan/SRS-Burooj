@@ -941,7 +941,7 @@ function AdminInquiries() {
       =================================================== */}
       <div
         style={{
-          background: "#071a33",
+          background: "linear-gradient(135deg, #0b3b82 0%, #071a33 100%)",
           color: "#ffffff",
           borderRadius: "14px",
           padding: "22px 24px",
@@ -969,8 +969,10 @@ function AdminInquiries() {
           <h1
             style={{
               margin: 0,
+              color: "#ffffff",
               fontSize: "28px",
               fontWeight: "800",
+              lineHeight: 1.25,
             }}
           >
             Inquiry Management
