@@ -27,6 +27,34 @@ const defaultSettings = {
   homeMedia: [],
 };
 
+function SiteIcon({ name, size = 18 }) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  if (name === "facebook") {
+    return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.4 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5h1.6V3.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V10H7v3h2.9v8h3.5z" /></svg>;
+  }
+  if (name === "youtube") {
+    return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor" /><path d="m10 9 5 3-5 3z" fill="#fff" /></svg>;
+  }
+  if (name === "instagram") {
+    return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...common}><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".7" fill="currentColor" stroke="none" /></svg>;
+  }
+  const shapes = {
+    phone: <><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.9L7.7 9.7a16 16 0 0 0 6.6 6.6l1.3-1.3a2 2 0 0 1 1.9-.6l2.8.5a2 2 0 0 1 1.7 2z" /></>,
+    whatsapp: <><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-5.1A8.5 8.5 0 1 1 21 11.5Z" /><path d="M9 8.5c.5 2.5 2 4 4.5 4.5l1-1 2 1-.5 2c-4 .5-8-3.5-7.5-7.5l2-.5 1 2z" /></>,
+    email: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+    link: <><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 2.9l-1.7 1.7" /><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21.1l1.7-1.7" /></>,
+    building: <><path d="M3 21h18M5 21V5l7-2 7 2v16" /><path d="M9 8h1m4 0h1M9 12h1m4 0h1M9 16h1m4 0h1M11 21v-3h2v3" /></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...common}>{shapes[name] || shapes.link}</svg>;
+}
+
 function Home() {
   const [settings, setSettings] = useState(defaultSettings);
 
@@ -737,53 +765,17 @@ function Home() {
     {
       name: "Instagram",
       url: settings.instagram,
-      icon: (
-        <svg
-          viewBox="0 0 24 24"
-          width="22"
-          height="22"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="5" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
-        </svg>
-      ),
+      icon: "instagram",
     },
     {
       name: "Facebook",
       url: settings.facebook,
-      icon: (
-        <svg
-          viewBox="0 0 24 24"
-          width="22"
-          height="22"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M13.5 21v-8h2.7l.4-3h-3.1V8.1c0-.9.3-1.5 1.6-1.5h1.6V3.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3V10H7.3v3h2.7v8h3.5Z" />
-        </svg>
-      ),
+      icon: "facebook",
     },
     {
       name: "YouTube",
       url: settings.youtube,
-      icon: (
-        <svg
-          viewBox="0 0 24 24"
-          width="24"
-          height="24"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.2 3.6-6.2 3.6Z" />
-        </svg>
-      ),
+      icon: "youtube",
     },
   ].filter((item) => item.url);
 
@@ -1040,14 +1032,21 @@ function Home() {
           <div style={quickContactContainer}>
             {phoneLink && (
               <a href={phoneLink} style={quickContactStyle} aria-label="Call Us">
-                <span style={iconCircleStyle}>WA</span>
+                <span style={iconCircleStyle}><SiteIcon name="phone" size={16} /></span>
+                Call Us
+              </a>
+            )}
+
+            {whatsappLink && (
+              <a href={whatsappLink} style={quickContactStyle} aria-label="WhatsApp Us" target="_blank" rel="noreferrer">
+                <span style={iconCircleStyle}><SiteIcon name="whatsapp" size={16} /></span>
                 WhatsApp
               </a>
             )}
 
             {emailLink && (
               <a href={emailLink} style={quickContactStyle} aria-label="Email Us">
-                <span style={iconCircleStyle}>TEL</span>
+                <span style={iconCircleStyle}><SiteIcon name="email" size={16} /></span>
                 Email Us
               </a>
             )}
@@ -1063,9 +1062,9 @@ function Home() {
                   }}
                   aria-label="Open social media links"
                 >
-                <span style={iconCircleStyle}>TEL</span>
+                <span style={iconCircleStyle}><SiteIcon name="link" size={16} /></span>
                   Social Media
-                  <span aria-hidden="true">ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¾</span>
+                  <span aria-hidden="true">⌄</span>
                 </summary>
 
                 <div
@@ -1103,7 +1102,7 @@ function Home() {
                         fontWeight: "700",
                       }}
                     >
-                <span style={iconCircleStyle}>TEL</span>
+                <span style={iconCircleStyle}><SiteIcon name={social.icon} size={16} /></span>
                       {social.name}
                     </a>
                   ))}
@@ -1202,7 +1201,7 @@ function Home() {
                               margin: "22px 22px 16px",
                             }}
                           >
-                            Ã°Å¸ÂÂ¢
+                            <SiteIcon name="building" size={25} />
                           </div>
                         )}
                         <div style={{ padding: "0 24px 24px" }}>
@@ -1370,7 +1369,7 @@ function Home() {
                                 "38px",
                             }}
                           >
-                            {"BLDG"}
+                            <SiteIcon name="building" size={38} />
                           </span>
 
                           <span
@@ -2166,9 +2165,7 @@ function Home() {
                           "15px",
                       }}
                     >
-                      {
-                        social.icon
-                      }
+                     <SiteIcon name={social.icon} size={22} />
                     </a>
                   )
                 )}

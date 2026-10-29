@@ -2002,8 +2002,8 @@ function CustomerDashboard() {
         ================================================= */
 
         .loading-logo {
-          width: 130px;
-          height: 75px;
+          width: 82px;
+          height: 48px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -3398,9 +3398,17 @@ function CustomerDashboard() {
                   >
                     {item.progress_photo && (
                       <img
-                        src={`${API}${item.progress_photo}`}
+                        src={
+                          /^https?:\/\//i.test(String(item.progress_photo))
+                            ? item.progress_photo
+                            : `${API}${item.progress_photo.startsWith("/") ? "" : "/"}${item.progress_photo}`
+                        }
                         alt="Construction Progress"
                         className="construction-card-image"
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
                       />
                     )}
 

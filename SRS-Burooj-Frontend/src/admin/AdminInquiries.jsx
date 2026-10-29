@@ -969,8 +969,10 @@ function AdminInquiries() {
           <h1
             style={{
               margin: 0,
+              color: "#ffffff",
               fontSize: "28px",
               fontWeight: "800",
+              lineHeight: 1.25,
             }}
           >
             Inquiry Management
