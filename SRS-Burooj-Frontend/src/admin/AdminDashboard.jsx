@@ -748,6 +748,9 @@ function AdminDashboard() {
   const [activeSection, setActiveSection] =
     useState("dashboard");
 
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
+
   const [dashboardData, setDashboardData] =
     useState({
       projects: 0,
@@ -1111,7 +1114,11 @@ function AdminDashboard() {
             SIDEBAR
             ================================================= */}
 
-        <aside className="admin-sidebar">
+        <aside
+  className={`admin-sidebar ${
+    mobileMenuOpen ? "mobile-menu-open" : ""
+  }`}
+>
 
           <div className="logo-area">
 
@@ -1157,9 +1164,10 @@ function AdminDashboard() {
                     ? "active"
                     : ""
                 }`}
-                onClick={() =>
-                  setActiveSection(item.id)
-                }
+                onClick={() => {
+  setActiveSection(item.id);
+  setMobileMenuOpen(false);
+}}
                 title={item.label}
                 aria-label={item.label}
               >
@@ -1193,9 +1201,10 @@ function AdminDashboard() {
                   ? "active"
                   : ""
               }`}
-              onClick={() =>
-                setActiveSection("profile")
-              }
+              onClick={() => {
+  setActiveSection("profile");
+  setMobileMenuOpen(false);
+}}
             >
               <span className="menu-icon">
                 <MenuIcon type="profile" />
@@ -1213,9 +1222,10 @@ function AdminDashboard() {
                   ? "active"
                   : ""
               }`}
-              onClick={() =>
-                setActiveSection("settings")
-              }
+             onClick={() => {
+  setActiveSection("settings");
+  setMobileMenuOpen(false);
+}}
             >
               <span className="menu-icon">
                 <MenuIcon type="settings" />
@@ -1233,9 +1243,10 @@ function AdminDashboard() {
                   ? "active"
                   : ""
               }`}
-              onClick={() =>
-                setActiveSection("status")
-              }
+             onClick={() => {
+  setActiveSection("status");
+  setMobileMenuOpen(false);
+}}
             >
               <span className="menu-icon">
                 <MenuIcon type="status" />
@@ -1289,6 +1300,15 @@ function AdminDashboard() {
           <header className="top-header">
 
             <div className="header-left">
+              <button
+  type="button"
+  className="mobile-menu-button"
+  onClick={() => setMobileMenuOpen((previous) => !previous)}
+  aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+  aria-expanded={mobileMenuOpen}
+>
+  <MenuIcon type="menu" />
+</button>
 
               <div className="mobile-brand">
                 <span className="mobile-brand-main">
@@ -1404,6 +1424,7 @@ function AdminDashboard() {
           width: 260px;
           min-width: 260px;
           min-height: 100vh;
+        
 
           background:
             linear-gradient(
@@ -1699,6 +1720,9 @@ function AdminDashboard() {
           display: flex;
           flex-direction: column;
         }
+          .mobile-menu-button {
+  display: none;
+}
 
         .top-header {
           min-height: 76px;
@@ -2752,6 +2776,76 @@ function AdminDashboard() {
         }
 
         @media (max-width: 650px) {
+          
+                    .admin-layout {
+            display: block;
+            width: 100%;
+            min-width: 0;
+          }
+
+          .admin-main {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .mobile-menu-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            border: 1px solid #dce6f2;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #10243c;
+            cursor: pointer;
+          }
+
+          .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 260px;
+            min-width: 260px;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+          }
+
+          .admin-sidebar.mobile-menu-open {
+            transform: translateX(0);
+          }
+                      .sidebar-menu,
+          .sidebar-bottom {
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
+          .menu-item {
+            justify-content: flex-start;
+            padding-left: 12px;
+            padding-right: 12px;
+          }
+
+          .menu-label {
+            display: block;
+          }
+
+          .sidebar-user {
+            display: flex;
+          }
+
+          .logout-button {
+            justify-content: flex-start;
+          }
+
+          .logout-button span {
+            display: inline;
+          }
 
           .top-header {
             min-height: 68px;
@@ -2851,10 +2945,6 @@ function AdminDashboard() {
 
         @media (max-width: 430px) {
 
-          .admin-sidebar {
-            width: 62px;
-            min-width: 62px;
-          }
 
           .logo-frame {
             width: 48px;

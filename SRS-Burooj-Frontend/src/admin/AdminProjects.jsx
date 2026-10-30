@@ -1023,7 +1023,66 @@ function AdminProjects() {
   }
 
   return (
-    <div style={styles.page}>
+    <div className="admin-projects-page" style={styles.page}>
+          {/* MOBILE RESPONSIVE CSS */}
+          <style>{`
+          .admin-projects-page {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+
+      .admin-projects-page *,
+      .admin-projects-page *::before,
+      .admin-projects-page *::after {
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 768px) {
+        .admin-projects-page {
+          padding: 14px !important;
+        }
+
+        .admin-projects-page h1 {
+          font-size: 25px !important;
+          overflow-wrap: anywhere;
+        }
+
+        .admin-projects-page input,
+        .admin-projects-page textarea,
+        .admin-projects-page select {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .admin-projects-page button {
+          max-width: 100%;
+          white-space: normal;
+        }
+
+        .admin-projects-page [style*="grid-template-columns"] {
+          grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .admin-projects-page img,
+        .admin-projects-page video {
+          max-width: 100%;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .admin-projects-page {
+          padding: 10px !important;
+        }
+
+        .admin-projects-page h1 {
+          font-size: 22px !important;
+        }
+      }
+              `}</style>
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>

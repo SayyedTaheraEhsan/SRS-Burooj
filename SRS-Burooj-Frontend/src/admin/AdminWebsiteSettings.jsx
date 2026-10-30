@@ -34,24 +34,63 @@ function AdminWebsiteSettings() {
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    try {
-      const savedSettings = localStorage.getItem("srsWebsiteSettings");
+    useEffect(() => {
+    let cancelled = false;
 
-      if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-
-        setSettings({
-          ...defaultSettings,
-          ...parsedSettings,
-          homeMedia: Array.isArray(parsedSettings.homeMedia)
-            ? parsedSettings.homeMedia
-            : [],
-        });
+    const applySettings = (parsedSettings) => {
+      if (!parsedSettings || typeof parsedSettings !== "object") {
+        return;
       }
-    } catch (error) {
-      console.error("Website settings load error:", error);
-    }
+
+      setSettings({
+        ...defaultSettings,
+        ...parsedSettings,
+        homeMedia: Array.isArray(parsedSettings.homeMedia)
+          ? parsedSettings.homeMedia
+          : [],
+      });
+    };
+
+    const loadSettings = async () => {
+      try {
+        const response = await adminFetch(
+          `${API_BASE}/api/website-settings`
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+
+          if (result.success && result.settings) {
+            if (!cancelled) {
+              applySettings(result.settings);
+              localStorage.setItem(
+                "srsWebsiteSettings",
+                JSON.stringify(result.settings)
+              );
+            }
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Server website settings load error:", error);
+      }
+
+      try {
+        const savedSettings = localStorage.getItem("srsWebsiteSettings");
+
+        if (savedSettings && !cancelled) {
+          applySettings(JSON.parse(savedSettings));
+        }
+      } catch (error) {
+        console.error("Local website settings load error:", error);
+      }
+    };
+
+    loadSettings();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleChange = (event) => {

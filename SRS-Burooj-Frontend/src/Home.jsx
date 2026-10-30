@@ -74,7 +74,7 @@ function Home() {
     useState("");
 
   const [homeMediaIndex, setHomeMediaIndex] = useState(0);
-
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // =========================================================
   // WEBSITE SETTINGS
   // =========================================================
@@ -823,6 +823,43 @@ function Home() {
 
   return (
     <div style={pageStyle}>
+    <style>{`
+  @media (max-width: 768px) {
+    .home-mobile-menu-toggle {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .home-nav {
+      display: none !important;
+      width: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: 6px;
+      padding: 10px 0 16px;
+    }
+
+    .home-nav.home-nav-open {
+      display: flex !important;
+    }
+
+    .home-nav a {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .home-nav a:last-child {
+      text-align: center;
+    }
+  }
+`}</style>
       {/* =====================================================
           NAVBAR
       ===================================================== */}
@@ -847,7 +884,28 @@ function Home() {
             </div>
           </a>
 
-          <nav style={navStyle}>
+          <button
+  type="button"
+  className="home-mobile-menu-toggle"
+  aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+  aria-expanded={isMobileMenuOpen}
+  onClick={() => setIsMobileMenuOpen((open) => !open)}
+  style={{
+    display: "none",
+    background: "transparent",
+    color: "#ffffff",
+    border: "1px solid rgba(255,255,255,0.6)",
+    borderRadius: "8px",
+    padding: "8px 12px",
+    fontSize: "24px",
+    cursor: "pointer",
+    lineHeight: 1,
+  }}
+>
+  {isMobileMenuOpen ? "✕" : "☰"}
+</button>
+
+          <nav className={`home-nav ${isMobileMenuOpen ? "home-nav-open" : ""}`} style={navStyle} onClick={() => setIsMobileMenuOpen(false)}>
             <a
               href="/"
               style={navLinkStyle}
@@ -2652,3 +2710,6 @@ const footerTextStyle = {
 };
 
 export default Home;
+
+
+
